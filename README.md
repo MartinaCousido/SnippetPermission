@@ -51,9 +51,27 @@ A nivel lógico. Los endpoints y formatos concretos están pendientes (ver [Deci
 | ¿Puede leer / escribir? | Snippet Service | US-2, US-4, US-6 |
 | Snippets accesibles por un usuario | Snippet Service | US-5 |
 
-## Stack y cómo correrlo
+## Stack
 
-⏳ **Pendiente.** Se define junto con el resto del sistema en el repo SnippetSearcher.
+**Java 21 + Spring Boot 4.1.1 + Gradle 9.8**, con **PostgreSQL 17** propio. Las decisiones del sistema están en [Decisiones técnicas](https://github.com/MartinaCousido/SnippetSearcher#decisiones-técnicas) de SnippetSearcher.
+
+## Cómo levantarlo
+
+Requisitos: Docker Desktop abierto. No hace falta instalar Java ni Gradle: se compila dentro de Docker.
+
+```bash
+cp .env.example .env          # variables de la base (el .env no se commitea)
+docker compose up --build     # Permission Service + su base
+```
+
+| Contenedor | URL / puerto en tu máquina |
+|---|---|
+| Permission Service | http://localhost:8081 |
+| Postgres `permisos` | `localhost:5434` |
+
+Para comprobar que está arriba y conectado a su base: http://localhost:8081/actuator/health tiene que responder `"status":"UP"`, con `db` también en `UP`.
+
+Para levantar **el sistema completo** (todos los servicios), usar `docker-compose.sistema.yml` desde el repo [SnippetSearcher](https://github.com/MartinaCousido/SnippetSearcher#cómo-levantarlo), con este repo clonado al lado.
 
 ## Flujo de trabajo
 
