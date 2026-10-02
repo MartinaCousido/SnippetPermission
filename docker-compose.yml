@@ -1,5 +1,10 @@
 # Levanta solo Permission Service y su base de datos.
 # Uso: cp .env.example .env && docker compose up --build
+#
+# El nombre de proyecto es el mismo en todos los compose del sistema: así los
+# contenedores y los datos son los mismos se levante un servicio solo o todo.
+name: snippet-searcher
+
 services:
   permission-service:
     build: .
@@ -20,7 +25,8 @@ services:
       POSTGRES_USER: ${PERMISOS_DB_USER}
       POSTGRES_PASSWORD: ${PERMISOS_DB_PASSWORD}
     ports:
-      - "5434:5432"
+      # Solo accesible desde esta máquina.
+      - "127.0.0.1:5434:5432"
     volumes:
       - permisos-data:/var/lib/postgresql/data
     healthcheck:

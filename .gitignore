@@ -14,15 +14,10 @@
 # Claude Code: configuración personal (las skills del proyecto sí se versionan)
 .claude/settings.local.json
 
-# Gradle / Kotlin
+# Gradle
 .gradle/
 build/
 out/
-.kotlin/
-
-# Node (UI)
-node_modules/
-dist/
 
 # Logs
 *.log

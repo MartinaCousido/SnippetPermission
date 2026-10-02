@@ -69,9 +69,23 @@ docker compose up --build     # Permission Service + su base
 | Permission Service | http://localhost:8081 |
 | Postgres `permisos` | `localhost:5434` |
 
+El puerto de Postgres solo se publica en `127.0.0.1`: la base no es accesible desde otras máquinas de la red.
+
+Si se quiere cambiar la contraseña de la base, hay que hacerlo en el `.env` **antes del primer arranque**: Postgres la toma solo cuando crea la base por primera vez. Para cambiarla después hay que borrar los datos (`docker compose down -v`) y volver a levantar.
+
 Para comprobar que está arriba y conectado a su base: http://localhost:8081/actuator/health tiene que responder `"status":"UP"`, con `db` también en `UP`.
 
-Para levantar **el sistema completo** (todos los servicios), usar `docker-compose.sistema.yml` desde el repo [SnippetSearcher](https://github.com/MartinaCousido/SnippetSearcher#cómo-levantarlo), con este repo clonado al lado.
+Para levantar **el sistema completo** (todos los servicios), usar `docker-compose.sistema.yml` desde el repo [SnippetSearcher](https://github.com/MartinaCousido/SnippetSearcher#cómo-levantarlo), con este repo clonado al lado. Ese archivo incluye el `docker-compose.yml` de este repo y usa su `.env`. Todos comparten el proyecto de Docker `snippet-searcher`, así que los contenedores y los datos son los mismos se levante este servicio solo o el sistema completo.
+
+### Correr los tests
+
+El framework es **JUnit 5**, con los starters de test de Spring Boot (decisión registrada en SnippetSearcher). Los tests levantan el servicio completo, así que necesitan la base arriba y las variables de conexión. Con la base levantada (`docker compose up -d permisos-db`):
+
+```bash
+DB_URL=jdbc:postgresql://localhost:5434/permisos DB_USER=<usuario> DB_PASSWORD=<contraseña> ./gradlew test
+```
+
+Usuario y contraseña son los del `.env`. Sin la base, `./gradlew build` y `./gradlew test` fallan; la imagen de Docker se arma igual porque solo ejecuta `bootJar`.
 
 ## Flujo de trabajo
 
