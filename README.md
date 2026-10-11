@@ -93,6 +93,8 @@ DB_URL=jdbc:postgresql://localhost:5434/permisos DB_USER=<usuario> DB_PASSWORD=<
 
 Usuario y contraseña son los del `.env`. Sin la base, `./gradlew build` y `./gradlew test` fallan; la imagen de Docker se arma igual porque solo ejecuta `bootJar`.
 
+En cada PR hacia `dev` o `main`, el CI (`.github/workflows/ci.yml`) corre `./gradlew build` con una base Postgres 17 descartable. Su check se llama `compilar-y-testear` y es obligatorio para mergear.
+
 ## Flujo de trabajo
 
 Igual que en SnippetSearcher: ramas `feature/*` desde `dev`, PR hacia `dev`, y de `dev` a `main`. Las correcciones de los PRs las hace Martina Cousido.
