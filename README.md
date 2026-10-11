@@ -59,6 +59,8 @@ A nivel lógico. Los endpoints y formatos concretos están pendientes (ver [Deci
 
 En cada push a `dev` o `main`, GitHub Actions (`.github/workflows/cd.yml`) arma la imagen con el `Dockerfile` y la publica en GHCR como `ghcr.io/martinacousido/permission-service`. Lleva dos tags: el del ambiente (`dev` o `prod`) y el del commit (`sha-…`). La imagen es pública: las VMs la descargan sin login. Ver [Tags de las imágenes](https://github.com/MartinaCousido/SnippetSearcher-infra#tags-de-las-imágenes) en el repo de infra.
 
+Después de publicar la imagen, el mismo workflow entra por SSH a la VM del ambiente (`dev` → VM de dev, `main` → VM de prod) y corre `docker service update` con el tag `sha-…` del commit. Actualiza **solo** `permission-service`: los demás servicios del stack no se reinician. Usa los secrets `VM_HOST`, `VM_USER` y `VM_SSH_KEY` de los *Environments* `dev` y `prod` de este repo. La VM tiene que estar prendida.
+
 ## Cómo levantarlo
 
 Requisitos: Docker Desktop abierto. No hace falta instalar Java ni Gradle: se compila dentro de Docker.
