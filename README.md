@@ -55,6 +55,10 @@ A nivel lógico. Los endpoints y formatos concretos están pendientes (ver [Deci
 
 **Java 21 + Spring Boot 4.1.1 + Gradle 9.8**, con **PostgreSQL 17** propio. Las decisiones del sistema están en [Decisiones técnicas](https://github.com/MartinaCousido/SnippetSearcher#decisiones-técnicas) de SnippetSearcher.
 
+## Imagen Docker
+
+En cada push a `dev` o `main`, GitHub Actions (`.github/workflows/cd.yml`) arma la imagen con el `Dockerfile` y la publica en GHCR como `ghcr.io/martinacousido/permission-service`. Lleva dos tags: el del ambiente (`dev` o `prod`) y el del commit (`sha-…`). La imagen es pública: las VMs la descargan sin login. Ver [Tags de las imágenes](https://github.com/MartinaCousido/SnippetSearcher-infra#tags-de-las-imágenes) en el repo de infra.
+
 ## Cómo levantarlo
 
 Requisitos: Docker Desktop abierto. No hace falta instalar Java ni Gradle: se compila dentro de Docker.
