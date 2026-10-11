@@ -55,6 +55,12 @@ A nivel lógico. Los endpoints y formatos concretos están pendientes (ver [Deci
 
 **Java 21 + Spring Boot 4.1.1 + Gradle 9.8**, con **PostgreSQL 17** propio. Las decisiones del sistema están en [Decisiones técnicas](https://github.com/MartinaCousido/SnippetSearcher#decisiones-técnicas) de SnippetSearcher.
 
+## Imagen Docker
+
+En cada push a `dev` o `main`, GitHub Actions (`.github/workflows/cd.yml`) arma la imagen con el `Dockerfile` y la publica en GHCR como `ghcr.io/martinacousido/permission-service`. Lleva dos tags: el del ambiente (`dev` o `prod`) y el del commit (`sha-…`). La imagen es pública: las VMs la descargan sin login. Ver [Tags de las imágenes](https://github.com/MartinaCousido/SnippetSearcher-infra#tags-de-las-imágenes) en el repo de infra.
+
+Después de publicar la imagen, el mismo workflow entra por SSH a la VM del ambiente (`dev` → VM de dev, `main` → VM de prod) y corre `docker service update` con el tag `sha-…` del commit. Actualiza **solo** `permission-service`: los demás servicios del stack no se reinician. Usa los secrets `VM_HOST`, `VM_USER` y `VM_SSH_KEY` de los *Environments* `dev` y `prod` de este repo. La VM tiene que estar prendida.
+
 ## Cómo levantarlo
 
 Requisitos: Docker Desktop abierto. No hace falta instalar Java ni Gradle: se compila dentro de Docker.
@@ -86,6 +92,8 @@ DB_URL=jdbc:postgresql://localhost:5434/permisos DB_USER=<usuario> DB_PASSWORD=<
 ```
 
 Usuario y contraseña son los del `.env`. Sin la base, `./gradlew build` y `./gradlew test` fallan; la imagen de Docker se arma igual porque solo ejecuta `bootJar`.
+
+En cada PR hacia `dev` o `main`, el CI (`.github/workflows/ci.yml`) corre `./gradlew build` con una base Postgres 17 descartable. Su check se llama `compilar-y-testear` y es obligatorio para mergear.
 
 ## Flujo de trabajo
 
