@@ -53,7 +53,7 @@ A nivel lógico. Los endpoints y formatos concretos están pendientes (ver [Deci
 
 ## Stack
 
-**Java 21 + Spring Boot 4.1.1 + Gradle 9.8**, con **PostgreSQL 17** propio. Las decisiones del sistema están en [Decisiones técnicas](https://github.com/MartinaCousido/SnippetSearcher#decisiones-técnicas) de SnippetSearcher.
+**Java 25 + Spring Boot 4.1.1 + Gradle 9.8**, con **PostgreSQL 17** propio. Las decisiones del sistema están en [Decisiones técnicas](https://github.com/MartinaCousido/SnippetSearcher#decisiones-técnicas) de SnippetSearcher.
 
 ## Imagen Docker
 
