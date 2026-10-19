@@ -46,7 +46,7 @@ Contrato definido en [Decisiones técnicas](https://github.com/MartinaCousido/Sn
 
 | Operación | Endpoint | Respuesta | Quién la usa | User story |
 |---|---|---|---|---|
-| Registrar owner | `POST /permissions/{snippetId}/owner` | 201. Si ya es el owner, no hace nada y responde 201 igual. **409** si el snippet ya tiene otro owner | Snippet Service | US-1, US-3 |
+| Registrar owner | `POST /permissions/{snippetId}/owner` | 201. Si ya es el owner, no hace nada y responde 201 igual. **409** si el snippet ya tiene otro owner, o si el usuario ya tiene otro permiso sobre el snippet | Snippet Service | US-1, US-3 |
 | Compartir snippet | `POST /permissions/{snippetId}/share` con `{ "userId": "auth0\|juan" }` | 201. 403 si quien comparte no es el owner | UI | US-7 |
 | ¿Puede leer / escribir? | `GET /permissions/{snippetId}` | `{ "canRead": true, "canWrite": false }` | Snippet Service | US-2, US-4, US-6 |
 | Snippets accesibles por un usuario | `GET /permissions/snippets?relation=owner\|shared\|all` | Lista de ids, por ejemplo `["42", "57"]` | Snippet Service | US-5 |

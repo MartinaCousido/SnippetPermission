@@ -69,6 +69,16 @@ class RegisterOwnerTests {
 	}
 
 	@Test
+	void aReaderCannotBecomeTheOwner() throws Exception {
+		var snippetId = UUID.randomUUID();
+		repository.save(new SnippetPermission(snippetId, CurrentUser.DEV_USER, PermissionType.LECTURA));
+
+		registerOwner(snippetId).andExpect(status().isConflict());
+
+		assertThat(repository.findBySnippetIdAndType(snippetId, PermissionType.OWNER)).isEmpty();
+	}
+
+	@Test
 	void theOwnerIsNeverTakenFromTheBody() throws Exception {
 		var snippetId = UUID.randomUUID();
 

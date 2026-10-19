@@ -2,6 +2,7 @@ package com.snippetsearcher.permissions.permission;
 
 import java.util.UUID;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -36,5 +37,12 @@ public class PermissionController {
 	@ExceptionHandler(OwnerAlreadyRegisteredException.class)
 	public ProblemDetail ownerAlreadyRegistered(OwnerAlreadyRegisteredException e) {
 		return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, e.getMessage());
+	}
+
+	// La base rechazó el permiso: el usuario ya tiene otro permiso sobre el
+	// snippet, o dos pedidos quisieron registrar al owner a la vez.
+	@ExceptionHandler(DataIntegrityViolationException.class)
+	public ProblemDetail conflictingPermission() {
+		return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, "El permiso choca con uno que ya existe");
 	}
 }
