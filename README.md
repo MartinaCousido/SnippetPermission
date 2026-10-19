@@ -87,13 +87,21 @@ Para levantar **el sistema completo** (todos los servicios), usar `docker-compos
 
 ### Correr los tests
 
-El framework es **JUnit 5**, con los starters de test de Spring Boot (decisión registrada en SnippetSearcher). Los tests levantan el servicio completo, así que necesitan la base arriba y las variables de conexión. Con la base levantada (`docker compose up -d permisos-db`):
+El framework es **JUnit 5**, con los starters de test de Spring Boot (decisión registrada en SnippetSearcher). Los tests levantan el servicio completo, así que necesitan la base arriba y las variables de conexión. Corren contra una **base aparte, `permisos_test`**, en el mismo contenedor: antes de cada test se borran los datos, y así no se pierden los que usa el servicio levantado en `permisos`.
+
+Con la base levantada (`docker compose up -d permisos-db`), crear la base de tests una sola vez:
 
 ```bash
-DB_URL=jdbc:postgresql://localhost:5434/permisos DB_USER=<usuario> DB_PASSWORD=<contraseña> ./gradlew test
+docker compose exec permisos-db createdb -U <usuario> permisos_test
 ```
 
-Usuario y contraseña son los del `.env`. Sin la base, `./gradlew build` y `./gradlew test` fallan; la imagen de Docker se arma igual porque solo ejecuta `bootJar`.
+Y correr los tests contra ella:
+
+```bash
+DB_URL=jdbc:postgresql://localhost:5434/permisos_test DB_USER=<usuario> DB_PASSWORD=<contraseña> ./gradlew test
+```
+
+Usuario y contraseña son los del `.env`. Si se borran los volúmenes (`down -v`), hay que volver a crear la base de tests. Sin la base, `./gradlew build` y `./gradlew test` fallan; la imagen de Docker se arma igual porque solo ejecuta `bootJar`.
 
 En cada PR hacia `dev` o `main`, el CI (`.github/workflows/ci.yml`) corre `./gradlew build` con una base Postgres 17 descartable. Su check se llama `compilar-y-testear` y es obligatorio para mergear.
 
