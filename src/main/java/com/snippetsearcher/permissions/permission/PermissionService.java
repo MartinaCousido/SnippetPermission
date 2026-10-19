@@ -1,5 +1,6 @@
 package com.snippetsearcher.permissions.permission;
 
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
@@ -27,5 +28,16 @@ public class PermissionService {
 			return;
 		}
 		repository.save(new SnippetPermission(snippetId, userId, PermissionType.OWNER));
+	}
+
+	// Los snippets a los que el usuario tiene acceso, según la relación (US-5).
+	@Transactional(readOnly = true)
+	public List<UUID> accessibleSnippets(String userId, Relation relation) {
+		var permissions = switch (relation) {
+			case OWNER -> repository.findByUserIdAndType(userId, PermissionType.OWNER);
+			case SHARED -> repository.findByUserIdAndType(userId, PermissionType.LECTURA);
+			case ALL -> repository.findByUserId(userId);
+		};
+		return permissions.stream().map(SnippetPermission::snippetId).toList();
 	}
 }
