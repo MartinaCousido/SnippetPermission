@@ -30,6 +30,15 @@ public class PermissionService {
 		repository.save(new SnippetPermission(snippetId, userId, PermissionType.OWNER));
 	}
 
+	// Si el usuario puede leer o escribir el snippet (US-2, US-4, US-6). Un
+	// snippet sin permisos registrados no lo puede ver nadie.
+	@Transactional(readOnly = true)
+	public Access access(UUID snippetId, String userId) {
+		return repository.findBySnippetIdAndUserId(snippetId, userId)
+				.map(permission -> Access.of(permission.type()))
+				.orElse(Access.NONE);
+	}
+
 	// Los snippets a los que el usuario tiene acceso, según la relación (US-5).
 	@Transactional(readOnly = true)
 	public List<UUID> accessibleSnippets(String userId, Relation relation) {

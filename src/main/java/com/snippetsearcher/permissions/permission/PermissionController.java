@@ -45,6 +45,12 @@ public class PermissionController {
 		return service.accessibleSnippets(currentUser.id(), Relation.fromValue(relation));
 	}
 
+	// Lo llama Snippet Service antes de mostrar o modificar un snippet.
+	@GetMapping("/{snippetId}")
+	public Access access(@PathVariable UUID snippetId) {
+		return service.access(snippetId, currentUser.id());
+	}
+
 	@ExceptionHandler(UnknownRelationException.class)
 	public ProblemDetail unknownRelation(UnknownRelationException e) {
 		return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, e.getMessage());
