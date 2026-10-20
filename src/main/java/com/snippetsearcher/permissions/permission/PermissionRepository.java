@@ -10,6 +10,8 @@ public interface PermissionRepository extends JpaRepository<SnippetPermission, L
 
 	Optional<SnippetPermission> findBySnippetIdAndType(UUID snippetId, PermissionType type);
 
+	Optional<SnippetPermission> findBySnippetIdAndUserId(UUID snippetId, String userId);
+
 	List<SnippetPermission> findByUserId(String userId);
 
 	List<SnippetPermission> findByUserIdAndType(String userId, PermissionType type);

@@ -48,7 +48,7 @@ Contrato definido en [Decisiones técnicas](https://github.com/MartinaCousido/Sn
 |---|---|---|---|---|
 | Registrar owner | `POST /permissions/{snippetId}/owner` | 201. Si ya es el owner, no hace nada y responde 201 igual. **409** si el snippet ya tiene otro owner, o si el usuario ya tiene otro permiso sobre el snippet | Snippet Service | US-1, US-3 |
 | Compartir snippet | `POST /permissions/{snippetId}/share` con `{ "userId": "auth0\|juan" }` | 201. 403 si quien comparte no es el owner | UI | US-7 |
-| ¿Puede leer / escribir? | `GET /permissions/{snippetId}` | `{ "canRead": true, "canWrite": false }` | Snippet Service | US-2, US-4, US-6 |
+| ¿Puede leer / escribir? | `GET /permissions/{snippetId}` | `{ "canRead": true, "canWrite": false }`. Owner: los dos en `true`. Compartido: solo `canRead`. Cualquier otro usuario, o un snippet sin permisos: los dos en `false` | Snippet Service | US-2, US-4, US-6 |
 | Snippets accesibles por un usuario | `GET /permissions/snippets?relation=owner\|shared\|all` | Lista de ids (UUID), por ejemplo `["3f2b…", "9c41…"]`. Sin `relation`, usa `all`. **400** si la relación no existe | Snippet Service | US-5 |
 
 En todos, el `userId` de quien pide sale del JWT. Mientras no esté Auth0, es siempre el usuario fijo `dev-user` (`security/CurrentUser`), una decisión temporal registrada en [Decisiones técnicas](https://github.com/MartinaCousido/SnippetSearcher#decisiones-técnicas). Cuando el pedido viene de Snippet Service, este reenvía el token del usuario: nunca manda el `userId` en el cuerpo ni en un header.
