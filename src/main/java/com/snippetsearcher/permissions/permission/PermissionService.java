@@ -30,6 +30,23 @@ public class PermissionService {
 		repository.save(new SnippetPermission(snippetId, userId, PermissionType.OWNER));
 	}
 
+	// Comparte el snippet con otro usuario, que queda con permiso de solo
+	// lectura (US-7). Solo el owner comparte. Compartir dos veces con el mismo
+	// usuario no duplica el permiso.
+	@Transactional
+	public void share(UUID snippetId, String ownerId, String userId) {
+		var owner = repository.findBySnippetIdAndType(snippetId, PermissionType.OWNER);
+		if (owner.isEmpty() || !owner.get().userId().equals(ownerId)) {
+			throw new NotOwnerException(snippetId);
+		}
+		if (userId.equals(ownerId)) {
+			throw new SelfShareException(snippetId);
+		}
+		if (repository.findBySnippetIdAndUserId(snippetId, userId).isEmpty()) {
+			repository.save(new SnippetPermission(snippetId, userId, PermissionType.LECTURA));
+		}
+	}
+
 	// Si el usuario puede leer o escribir el snippet (US-2, US-4, US-6). Un
 	// snippet sin permisos registrados no lo puede ver nadie.
 	@Transactional(readOnly = true)
