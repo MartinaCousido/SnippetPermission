@@ -14,6 +14,7 @@ Servicio de permisos de [Snippet Searcher](https://github.com/MartinaCousido/Sni
 | Compartir un snippet con otro usuario (solo lectura) | Guardar el contenido ni los metadatos de los snippets (eso es de **Snippet Service**) |
 | Responder si un usuario puede leer o escribir un snippet | Decidir permisos por rol (por ahora no hay roles en el sistema) |
 | Listar los snippets a los que un usuario tiene acceso | |
+| Borrar los permisos de un snippet cuando se borra | |
 
 ## Reglas de permisos
 
@@ -52,6 +53,7 @@ Contrato definido en [Decisiones técnicas](https://github.com/MartinaCousido/Sn
 | Compartir snippet | `POST /permissions/{snippetId}/share` con `{ "userId": "auth0\|juan" }` | 201. 403 si quien comparte no es el owner | UI | US-7 |
 | ¿Puede leer / escribir? | `GET /permissions/{snippetId}` | `{ "canRead": true, "canWrite": false }`. Owner: los dos en `true`. Compartido: solo `canRead`. Cualquier otro usuario, o un snippet sin permisos: los dos en `false` | Snippet Service | US-2, US-4, US-6 |
 | Snippets accesibles por un usuario | `GET /permissions/snippets?relation=owner\|shared\|all` | Lista de ids (UUID), por ejemplo `["3f2b…", "9c41…"]`. Sin `relation`, usa `all`. **400** si la relación no existe | Snippet Service | US-5 |
+| Borrar los permisos de un snippet | `DELETE /permissions/{snippetId}` | 204. Borra todos los permisos del snippet (owner y compartidos). Si el snippet no tiene permisos, 204 igual (así Snippet Service puede reintentar). **403** si quien pide no es el owner | Snippet Service, al borrar un snippet | — |
 
 En todos, el `userId` de quien pide sale del JWT. Mientras no esté Auth0, es siempre el usuario fijo `dev-user` (`security/CurrentUser`), una decisión temporal registrada en [Decisiones técnicas](https://github.com/MartinaCousido/SnippetSearcher#decisiones-técnicas). Cuando el pedido viene de Snippet Service, este reenvía el token del usuario: nunca manda el `userId` en el cuerpo ni en un header.
 
