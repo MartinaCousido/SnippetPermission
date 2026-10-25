@@ -11,10 +11,12 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.snippetsearcher.permissions.security.CurrentUser;
 
@@ -36,6 +38,17 @@ public class PermissionController {
 	@ResponseStatus(HttpStatus.CREATED)
 	public void registerOwner(@PathVariable UUID snippetId) {
 		service.registerOwner(snippetId, currentUser.id());
+	}
+
+	// Lo llama la UI para compartir un snippet (US-7). Quien comparte es quien
+	// hace el pedido; el invitado viene en el cuerpo.
+	@PostMapping("/{snippetId}/share")
+	@ResponseStatus(HttpStatus.CREATED)
+	public void share(@PathVariable UUID snippetId, @RequestBody ShareRequest request) {
+		if (request.userId() == null || request.userId().isBlank()) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Falta el userId del invitado");
+		}
+		service.share(snippetId, currentUser.id(), request.userId());
 	}
 
 	// Lo llama Snippet Service para armar el listado (US-5). Devuelve los ids de
@@ -62,6 +75,11 @@ public class PermissionController {
 
 	@ExceptionHandler(UnknownRelationException.class)
 	public ProblemDetail unknownRelation(UnknownRelationException e) {
+		return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, e.getMessage());
+	}
+
+	@ExceptionHandler(SelfShareException.class)
+	public ProblemDetail selfShare(SelfShareException e) {
 		return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, e.getMessage());
 	}
 

@@ -50,7 +50,7 @@ Contrato definido en [Decisiones técnicas](https://github.com/MartinaCousido/Sn
 | Operación | Endpoint | Respuesta | Quién la usa | User story |
 |---|---|---|---|---|
 | Registrar owner | `POST /permissions/{snippetId}/owner` | 201. Si ya es el owner, no hace nada y responde 201 igual. **409** si el snippet ya tiene otro owner, o si el usuario ya tiene otro permiso sobre el snippet | Snippet Service | US-1, US-3 |
-| Compartir snippet | `POST /permissions/{snippetId}/share` con `{ "userId": "auth0\|juan" }` | 201. 403 si quien comparte no es el owner | UI | US-7 |
+| Compartir snippet | `POST /permissions/{snippetId}/share` con `{ "userId": "auth0\|juan" }` | 201. El invitado queda con permiso `LECTURA`; compartir dos veces no lo duplica. **403** si quien comparte no es el owner, **400** si el owner se lo comparte a sí mismo o falta el `userId` | UI | US-7 |
 | ¿Puede leer / escribir? | `GET /permissions/{snippetId}` | `{ "canRead": true, "canWrite": false }`. Owner: los dos en `true`. Compartido: solo `canRead`. Cualquier otro usuario, o un snippet sin permisos: los dos en `false` | Snippet Service | US-2, US-4, US-6 |
 | Snippets accesibles por un usuario | `GET /permissions/snippets?relation=owner\|shared\|all` | Lista de ids (UUID), por ejemplo `["3f2b…", "9c41…"]`. Sin `relation`, usa `all`. **400** si la relación no existe | Snippet Service | US-5 |
 | Borrar los permisos de un snippet | `DELETE /permissions/{snippetId}` | 204. Borra todos los permisos del snippet (owner y compartidos). Si el snippet no tiene permisos, 204 igual (así Snippet Service puede reintentar). **403** si quien pide no es el owner | Snippet Service, al borrar un snippet | — |
