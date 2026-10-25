@@ -14,6 +14,8 @@ services:
       DB_URL: jdbc:postgresql://permisos-db:5432/${PERMISOS_DB_NAME:?Falta PERMISOS_DB_NAME, copiá .env.example a .env}
       DB_USER: ${PERMISOS_DB_USER:?Falta PERMISOS_DB_USER, copiá .env.example a .env}
       DB_PASSWORD: ${PERMISOS_DB_PASSWORD:?Falta PERMISOS_DB_PASSWORD, copiá .env.example a .env}
+      # La UI con npm run dev. Ver CORS en el README de SnippetSearcher.
+      CORS_ALLOWED_ORIGINS: http://localhost:5173
     depends_on:
       permisos-db:
         condition: service_healthy
