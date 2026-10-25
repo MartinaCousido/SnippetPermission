@@ -32,6 +32,8 @@ Servicio de permisos de [Snippet Searcher](https://github.com/MartinaCousido/Sni
 
 Este servicio no llama a ningún otro servicio del sistema. Su base de datos es propia y ningún otro servicio accede a ella.
 
+Desde el navegador, acepta solo los origins de la variable `CORS_ALLOWED_ORIGINS` (`security/CorsConfig`). Las reglas están en [CORS](https://github.com/MartinaCousido/SnippetSearcher#cors) de SnippetSearcher.
+
 ## Modelo de datos (lógico)
 
 | Dato | Descripción |
