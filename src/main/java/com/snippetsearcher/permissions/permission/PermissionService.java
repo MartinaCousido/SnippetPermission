@@ -39,6 +39,18 @@ public class PermissionService {
 				.orElse(Access.NONE);
 	}
 
+	// Borra todos los permisos del snippet, cuando se borra el snippet. Solo el
+	// owner. Si ya no tiene permisos no hace nada: así Snippet Service puede
+	// reintentar.
+	@Transactional
+	public void deleteAll(UUID snippetId, String userId) {
+		var owner = repository.findBySnippetIdAndType(snippetId, PermissionType.OWNER);
+		if (owner.isPresent() && !owner.get().userId().equals(userId)) {
+			throw new NotOwnerException(snippetId);
+		}
+		repository.deleteBySnippetId(snippetId);
+	}
+
 	// Los snippets a los que el usuario tiene acceso, según la relación (US-5).
 	@Transactional(readOnly = true)
 	public List<UUID> accessibleSnippets(String userId, Relation relation) {

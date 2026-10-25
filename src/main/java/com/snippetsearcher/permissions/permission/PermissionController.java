@@ -6,6 +6,7 @@ import java.util.UUID;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -51,9 +52,22 @@ public class PermissionController {
 		return service.access(snippetId, currentUser.id());
 	}
 
+	// Lo llama Snippet Service al borrar un snippet: borra todos sus permisos,
+	// para no dejar permisos de un snippet que ya no existe.
+	@DeleteMapping("/{snippetId}")
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	public void deleteAll(@PathVariable UUID snippetId) {
+		service.deleteAll(snippetId, currentUser.id());
+	}
+
 	@ExceptionHandler(UnknownRelationException.class)
 	public ProblemDetail unknownRelation(UnknownRelationException e) {
 		return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, e.getMessage());
+	}
+
+	@ExceptionHandler(NotOwnerException.class)
+	public ProblemDetail notOwner(NotOwnerException e) {
+		return ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, e.getMessage());
 	}
 
 	@ExceptionHandler(OwnerAlreadyRegisteredException.class)
