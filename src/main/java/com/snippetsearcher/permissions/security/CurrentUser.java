@@ -1,18 +1,22 @@
 package com.snippetsearcher.permissions.security;
 
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.stereotype.Component;
 
 // Dice quién es el usuario que hace el pedido. Es el único lugar del servicio
 // que lo sabe: el userId nunca se toma de un dato que manda el cliente.
-// Mientras no esté Auth0 es siempre el usuario fijo dev-user (decisión
-// temporal, ver Decisiones técnicas en SnippetSearcher). Con Auth0, va a
-// sacarlo del JWT.
+// Es el "sub" del token de Auth0, por ejemplo auth0|abc123, que Spring ya
+// validó (SecurityConfig). Cuando pide Snippet Service, es el token del
+// usuario que este reenvía.
 @Component
 public class CurrentUser {
 
-	public static final String DEV_USER = "dev-user";
-
 	public String id() {
-		return DEV_USER;
+		var authentication = SecurityContextHolder.getContext().getAuthentication();
+		if (authentication instanceof JwtAuthenticationToken jwt) {
+			return jwt.getName();
+		}
+		throw new IllegalStateException("El pedido no tiene un usuario autenticado");
 	}
 }

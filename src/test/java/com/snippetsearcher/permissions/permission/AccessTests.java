@@ -12,11 +12,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.test.web.servlet.MockMvc;
+import com.snippetsearcher.permissions.security.TestUsers;
 
-import com.snippetsearcher.permissions.security.CurrentUser;
 
 // GET /permissions/{snippetId} contra la base real. El usuario que pide es
-// siempre dev-user.
+// TestUsers.ANA.
 @SpringBootTest
 @AutoConfigureMockMvc
 class AccessTests {
@@ -35,15 +35,15 @@ class AccessTests {
 	@BeforeEach
 	void setUp() {
 		repository.deleteAll();
-		repository.save(new SnippetPermission(OWN, CurrentUser.DEV_USER, PermissionType.OWNER));
+		repository.save(new SnippetPermission(OWN, TestUsers.ANA, PermissionType.OWNER));
 		repository.save(new SnippetPermission(SHARED, "auth0|otro", PermissionType.OWNER));
-		repository.save(new SnippetPermission(SHARED, CurrentUser.DEV_USER, PermissionType.LECTURA));
+		repository.save(new SnippetPermission(SHARED, TestUsers.ANA, PermissionType.LECTURA));
 		repository.save(new SnippetPermission(SOMEONE_ELSES, "auth0|otro", PermissionType.OWNER));
 	}
 
 	@Test
 	void theOwnerCanReadAndWrite() throws Exception {
-		mvc.perform(get("/permissions/{id}", OWN))
+		mvc.perform(get("/permissions/{id}", OWN).with(TestUsers.ana()))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.canRead").value(true))
 				.andExpect(jsonPath("$.canWrite").value(true));
@@ -51,7 +51,7 @@ class AccessTests {
 
 	@Test
 	void aUserItWasSharedWithCanOnlyRead() throws Exception {
-		mvc.perform(get("/permissions/{id}", SHARED))
+		mvc.perform(get("/permissions/{id}", SHARED).with(TestUsers.ana()))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.canRead").value(true))
 				.andExpect(jsonPath("$.canWrite").value(false));
@@ -59,7 +59,7 @@ class AccessTests {
 
 	@Test
 	void anyOtherUserCanDoNothing() throws Exception {
-		mvc.perform(get("/permissions/{id}", SOMEONE_ELSES))
+		mvc.perform(get("/permissions/{id}", SOMEONE_ELSES).with(TestUsers.ana()))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.canRead").value(false))
 				.andExpect(jsonPath("$.canWrite").value(false));
@@ -67,7 +67,7 @@ class AccessTests {
 
 	@Test
 	void aSnippetWithoutPermissionsCannotBeSeen() throws Exception {
-		mvc.perform(get("/permissions/{id}", UNKNOWN))
+		mvc.perform(get("/permissions/{id}", UNKNOWN).with(TestUsers.ana()))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.canRead").value(false))
 				.andExpect(jsonPath("$.canWrite").value(false));
@@ -75,6 +75,6 @@ class AccessTests {
 
 	@Test
 	void anIdThatIsNotAUuidIsABadRequest() throws Exception {
-		mvc.perform(get("/permissions/{id}", "42")).andExpect(status().isBadRequest());
+		mvc.perform(get("/permissions/{id}", "42").with(TestUsers.ana())).andExpect(status().isBadRequest());
 	}
 }

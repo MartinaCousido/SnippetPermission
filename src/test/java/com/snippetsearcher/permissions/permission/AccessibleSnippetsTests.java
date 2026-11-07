@@ -14,8 +14,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.test.web.servlet.MockMvc;
+import com.snippetsearcher.permissions.security.TestUsers;
 
-import com.snippetsearcher.permissions.security.CurrentUser;
 
 // GET /permissions/snippets?relation= contra la base real.
 @SpringBootTest
@@ -35,36 +35,36 @@ class AccessibleSnippetsTests {
 	@BeforeEach
 	void setUp() {
 		repository.deleteAll();
-		repository.save(new SnippetPermission(OWN, CurrentUser.DEV_USER, PermissionType.OWNER));
+		repository.save(new SnippetPermission(OWN, TestUsers.ANA, PermissionType.OWNER));
 		repository.save(new SnippetPermission(SHARED, "auth0|otro", PermissionType.OWNER));
-		repository.save(new SnippetPermission(SHARED, CurrentUser.DEV_USER, PermissionType.LECTURA));
+		repository.save(new SnippetPermission(SHARED, TestUsers.ANA, PermissionType.LECTURA));
 		repository.save(new SnippetPermission(SOMEONE_ELSES, "auth0|otro", PermissionType.OWNER));
 	}
 
 	@Test
 	void ownerReturnsOnlyTheUsersOwnSnippets() throws Exception {
-		mvc.perform(get("/permissions/snippets").param("relation", "owner"))
+		mvc.perform(get("/permissions/snippets").param("relation", "owner").with(TestUsers.ana()))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$", containsInAnyOrder(OWN.toString())));
 	}
 
 	@Test
 	void sharedReturnsOnlyTheSnippetsSharedWithTheUser() throws Exception {
-		mvc.perform(get("/permissions/snippets").param("relation", "shared"))
+		mvc.perform(get("/permissions/snippets").param("relation", "shared").with(TestUsers.ana()))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$", containsInAnyOrder(SHARED.toString())));
 	}
 
 	@Test
 	void allReturnsBoth() throws Exception {
-		mvc.perform(get("/permissions/snippets").param("relation", "all"))
+		mvc.perform(get("/permissions/snippets").param("relation", "all").with(TestUsers.ana()))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$", containsInAnyOrder(OWN.toString(), SHARED.toString())));
 	}
 
 	@Test
 	void withoutARelationItReturnsAll() throws Exception {
-		mvc.perform(get("/permissions/snippets"))
+		mvc.perform(get("/permissions/snippets").with(TestUsers.ana()))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$", containsInAnyOrder(OWN.toString(), SHARED.toString())));
 	}
@@ -73,14 +73,14 @@ class AccessibleSnippetsTests {
 	void aUserWithoutSnippetsGetsAnEmptyList() throws Exception {
 		repository.deleteAll();
 
-		mvc.perform(get("/permissions/snippets"))
+		mvc.perform(get("/permissions/snippets").with(TestUsers.ana()))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$", empty()));
 	}
 
 	@Test
 	void anUnknownRelationIsABadRequest() throws Exception {
-		mvc.perform(get("/permissions/snippets").param("relation", "amigos"))
+		mvc.perform(get("/permissions/snippets").param("relation", "amigos").with(TestUsers.ana()))
 				.andExpect(status().isBadRequest())
 				.andExpect(jsonPath("$.detail").value("Relación desconocida: amigos. Puede ser owner, shared o all"));
 	}

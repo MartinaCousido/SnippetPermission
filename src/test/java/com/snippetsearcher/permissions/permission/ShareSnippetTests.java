@@ -14,8 +14,8 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
+import com.snippetsearcher.permissions.security.TestUsers;
 
-import com.snippetsearcher.permissions.security.CurrentUser;
 
 // POST /permissions/{snippetId}/share contra la base real (US-7).
 @SpringBootTest
@@ -42,11 +42,11 @@ class ShareSnippetTests {
 	private ResultActions share(String body) throws Exception {
 		return mvc.perform(post("/permissions/{snippetId}/share", SNIPPET)
 				.contentType(MediaType.APPLICATION_JSON)
-				.content(body));
+				.content(body).with(TestUsers.ana()));
 	}
 
 	private void devUserOwnsTheSnippet() {
-		repository.save(new SnippetPermission(SNIPPET, CurrentUser.DEV_USER, PermissionType.OWNER));
+		repository.save(new SnippetPermission(SNIPPET, TestUsers.ANA, PermissionType.OWNER));
 	}
 
 	@Test
@@ -85,7 +85,7 @@ class ShareSnippetTests {
 	@Test
 	void someoneWhoIsNotTheOwnerCannotShareIt() throws Exception {
 		repository.save(new SnippetPermission(SNIPPET, "auth0|otro", PermissionType.OWNER));
-		repository.save(new SnippetPermission(SNIPPET, CurrentUser.DEV_USER, PermissionType.LECTURA));
+		repository.save(new SnippetPermission(SNIPPET, TestUsers.ANA, PermissionType.LECTURA));
 
 		share("{\"userId\": \"auth0|juan\"}").andExpect(status().isForbidden());
 
@@ -104,7 +104,7 @@ class ShareSnippetTests {
 	void theOwnerCannotShareItWithThemself() throws Exception {
 		devUserOwnsTheSnippet();
 
-		share("{\"userId\": \"dev-user\"}").andExpect(status().isBadRequest());
+		share("{\"userId\": \"" + TestUsers.ANA + "\"}").andExpect(status().isBadRequest());
 
 		assertThat(repository.count()).isEqualTo(1);
 	}
