@@ -37,7 +37,7 @@ class CorsTests {
 	// Los espacios después de las comas de la variable no cuentan.
 	@Test
 	void acceptsEveryOriginOfTheList() throws Exception {
-		mvc.perform(get("/permissions/snippets").header("Origin", "http://localhost:5173"))
+		mvc.perform(get("/permissions/snippets").header("Origin", "http://localhost:5173").with(TestUsers.ana()))
 				.andExpect(status().isOk())
 				.andExpect(header().string("Access-Control-Allow-Origin", "http://localhost:5173"));
 	}
@@ -63,14 +63,14 @@ class CorsTests {
 
 	@Test
 	void getFromAllowedOriginGetsAllowOrigin() throws Exception {
-		mvc.perform(get("/permissions/snippets").header("Origin", DEV))
+		mvc.perform(get("/permissions/snippets").header("Origin", DEV).with(TestUsers.ana()))
 				.andExpect(status().isOk())
 				.andExpect(header().string("Access-Control-Allow-Origin", DEV));
 	}
 
 	@Test
 	void getWithoutOriginIsNotAffected() throws Exception {
-		mvc.perform(get("/permissions/snippets"))
+		mvc.perform(get("/permissions/snippets").with(TestUsers.ana()))
 				.andExpect(status().isOk())
 				.andExpect(header().doesNotExist("Access-Control-Allow-Origin"));
 	}

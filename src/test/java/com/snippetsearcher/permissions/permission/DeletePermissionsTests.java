@@ -12,8 +12,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.test.web.servlet.MockMvc;
+import com.snippetsearcher.permissions.security.TestUsers;
 
-import com.snippetsearcher.permissions.security.CurrentUser;
 
 // DELETE /permissions/{snippetId} contra la base real.
 @SpringBootTest
@@ -36,11 +36,11 @@ class DeletePermissionsTests {
 
 	@Test
 	void theOwnerDeletesEveryPermissionOfTheSnippet() throws Exception {
-		repository.save(new SnippetPermission(SNIPPET, CurrentUser.DEV_USER, PermissionType.OWNER));
+		repository.save(new SnippetPermission(SNIPPET, TestUsers.ANA, PermissionType.OWNER));
 		repository.save(new SnippetPermission(SNIPPET, "auth0|juan", PermissionType.LECTURA));
-		repository.save(new SnippetPermission(OTRO_SNIPPET, CurrentUser.DEV_USER, PermissionType.OWNER));
+		repository.save(new SnippetPermission(OTRO_SNIPPET, TestUsers.ANA, PermissionType.OWNER));
 
-		mvc.perform(delete("/permissions/{snippetId}", SNIPPET)).andExpect(status().isNoContent());
+		mvc.perform(delete("/permissions/{snippetId}", SNIPPET).with(TestUsers.ana())).andExpect(status().isNoContent());
 
 		assertThat(repository.findAll()).extracting(SnippetPermission::snippetId).containsExactly(OTRO_SNIPPET);
 	}
@@ -48,9 +48,9 @@ class DeletePermissionsTests {
 	@Test
 	void someoneWhoIsNotTheOwnerCannotDeleteThem() throws Exception {
 		repository.save(new SnippetPermission(SNIPPET, "auth0|otro", PermissionType.OWNER));
-		repository.save(new SnippetPermission(SNIPPET, CurrentUser.DEV_USER, PermissionType.LECTURA));
+		repository.save(new SnippetPermission(SNIPPET, TestUsers.ANA, PermissionType.LECTURA));
 
-		mvc.perform(delete("/permissions/{snippetId}", SNIPPET)).andExpect(status().isForbidden());
+		mvc.perform(delete("/permissions/{snippetId}", SNIPPET).with(TestUsers.ana())).andExpect(status().isForbidden());
 
 		assertThat(repository.count()).isEqualTo(2);
 	}
@@ -58,6 +58,6 @@ class DeletePermissionsTests {
 	// Así Snippet Service puede reintentar si no recibió la respuesta.
 	@Test
 	void aSnippetWithoutPermissionsIsNotAnError() throws Exception {
-		mvc.perform(delete("/permissions/{snippetId}", SNIPPET)).andExpect(status().isNoContent());
+		mvc.perform(delete("/permissions/{snippetId}", SNIPPET).with(TestUsers.ana())).andExpect(status().isNoContent());
 	}
 }

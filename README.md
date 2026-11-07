@@ -55,7 +55,16 @@ Contrato definido en [Decisiones técnicas](https://github.com/MartinaCousido/Sn
 | Snippets accesibles por un usuario | `GET /permissions/snippets?relation=owner\|shared\|all` | Lista de ids (UUID), por ejemplo `["3f2b…", "9c41…"]`. Sin `relation`, usa `all`. **400** si la relación no existe | Snippet Service | US-5 |
 | Borrar los permisos de un snippet | `DELETE /permissions/{snippetId}` | 204. Borra todos los permisos del snippet (owner y compartidos). Si el snippet no tiene permisos, 204 igual (así Snippet Service puede reintentar). **403** si quien pide no es el owner | Snippet Service, al borrar un snippet | — |
 
-En todos, el `userId` de quien pide sale del JWT. Mientras no esté Auth0, es siempre el usuario fijo `dev-user` (`security/CurrentUser`), una decisión temporal registrada en [Decisiones técnicas](https://github.com/MartinaCousido/SnippetSearcher#decisiones-técnicas). Cuando el pedido viene de Snippet Service, este reenvía el token del usuario: nunca manda el `userId` en el cuerpo ni en un header.
+En todos, el `userId` de quien pide es el `sub` del token de Auth0 (`security/CurrentUser`). Cuando el pedido viene de Snippet Service, este reenvía el token del usuario: nunca manda el `userId` en el cuerpo ni en un header.
+
+Además, cada operación pide un permiso del token (`security/SecurityConfig`, ver **Roles y permisos** en [Decisiones técnicas](https://github.com/MartinaCousido/SnippetSearcher#decisiones-técnicas)):
+
+| Operación | Permiso |
+|---|---|
+| ¿Puede leer o escribir? y snippets accesibles (`GET`) | `read:snippets` |
+| Registrar owner, compartir y borrar permisos (`POST`, `DELETE`) | `write:snippets` |
+
+Sin token válido responde **401**, y sin el permiso, **403**. El health (`/actuator/health`) no pide token.
 
 ## Stack
 
@@ -87,6 +96,8 @@ Si se quiere cambiar la contraseña de la base, hay que hacerlo en el `.env` **a
 
 Para comprobar que está arriba y conectado a su base: http://localhost:8081/actuator/health tiene que responder `"status":"UP"`, con `db` también en `UP`.
 
+`AUTH0_DOMAIN` y `AUTH0_AUDIENCE` ya están en el `docker-compose.yml`: no son secretos y no van en el `.env`. Sin ellas, el servicio no arranca. Para llamar a los demás endpoints hace falta un token: ver [Cómo levantarlo](https://github.com/MartinaCousido/SnippetSearcher#cómo-levantarlo) en SnippetSearcher.
+
 Para levantar **el sistema completo** (todos los servicios), usar `docker-compose.sistema.yml` desde el repo [SnippetSearcher](https://github.com/MartinaCousido/SnippetSearcher#cómo-levantarlo), con este repo clonado al lado. Ese archivo incluye el `docker-compose.yml` de este repo y usa su `.env`. Todos comparten el proyecto de Docker `snippet-searcher`, así que los contenedores y los datos son los mismos se levante este servicio solo o el sistema completo.
 
 ### Correr los tests
@@ -104,6 +115,8 @@ Y correr los tests contra ella:
 ```bash
 DB_URL=jdbc:postgresql://localhost:5434/permisos_test DB_USER=<usuario> DB_PASSWORD=<contraseña> ./gradlew test
 ```
+
+Los tests no llaman a Auth0: cada pedido arma su usuario con `jwt()` de `spring-security-test` (`security/TestUsers`), y Gradle les pasa valores de prueba para `AUTH0_DOMAIN` y `AUTH0_AUDIENCE` (`build.gradle`).
 
 Usuario y contraseña son los del `.env`. Si se borran los volúmenes (`down -v`), hay que volver a crear la base de tests. Sin la base, `./gradlew build` y `./gradlew test` fallan; la imagen de Docker se arma igual porque solo ejecuta `bootJar`.
 
