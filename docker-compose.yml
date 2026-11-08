@@ -20,6 +20,10 @@ services:
       # son los mismos que en el stack (ver Auth0 en Decisiones técnicas).
       AUTH0_DOMAIN: dev-eadjutr73y1lgdc5.us.auth0.com
       AUTH0_AUDIENCE: https://snippetsearcher-api
+      # New Relic (#29): apagado en local, salvo que se pase la license key.
+      NEW_RELIC_AGENT_ENABLED: ${NEW_RELIC_AGENT_ENABLED:-false}
+      NEW_RELIC_LICENSE_KEY: ${NEW_RELIC_LICENSE_KEY:-}
+      NEW_RELIC_APP_NAME: permission-service (local)
     depends_on:
       permisos-db:
         condition: service_healthy

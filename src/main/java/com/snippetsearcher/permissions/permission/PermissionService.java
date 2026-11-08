@@ -3,11 +3,15 @@ package com.snippetsearcher.permissions.permission;
 import java.util.List;
 import java.util.UUID;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class PermissionService {
+
+	private static final Logger log = LoggerFactory.getLogger(PermissionService.class);
 
 	private final PermissionRepository repository;
 
@@ -23,11 +27,13 @@ public class PermissionService {
 		var owner = repository.findBySnippetIdAndType(snippetId, PermissionType.OWNER);
 		if (owner.isPresent()) {
 			if (!owner.get().userId().equals(userId)) {
+				log.warn("el snippet {} ya tiene otro owner", snippetId);
 				throw new OwnerAlreadyRegisteredException(snippetId);
 			}
 			return;
 		}
 		repository.save(new SnippetPermission(snippetId, userId, PermissionType.OWNER));
+		log.info("owner registrado del snippet {}", snippetId);
 	}
 
 	// Comparte el snippet con otro usuario, que queda con permiso de solo
@@ -37,6 +43,7 @@ public class PermissionService {
 	public void share(UUID snippetId, String ownerId, String userId) {
 		var owner = repository.findBySnippetIdAndType(snippetId, PermissionType.OWNER);
 		if (owner.isEmpty() || !owner.get().userId().equals(ownerId)) {
+			log.info("compartir rechazado: no es el owner del snippet {}", snippetId);
 			throw new NotOwnerException(snippetId);
 		}
 		if (userId.equals(ownerId)) {
@@ -44,6 +51,7 @@ public class PermissionService {
 		}
 		if (repository.findBySnippetIdAndUserId(snippetId, userId).isEmpty()) {
 			repository.save(new SnippetPermission(snippetId, userId, PermissionType.LECTURA));
+			log.info("snippet {} compartido con {}", snippetId, userId);
 		}
 	}
 
@@ -63,9 +71,11 @@ public class PermissionService {
 	public void deleteAll(UUID snippetId, String userId) {
 		var owner = repository.findBySnippetIdAndType(snippetId, PermissionType.OWNER);
 		if (owner.isPresent() && !owner.get().userId().equals(userId)) {
+			log.info("borrar permisos rechazado: no es el owner del snippet {}", snippetId);
 			throw new NotOwnerException(snippetId);
 		}
 		repository.deleteBySnippetId(snippetId);
+		log.info("permisos del snippet {} borrados", snippetId);
 	}
 
 	// Los snippets a los que el usuario tiene acceso, según la relación (US-5).
@@ -76,6 +86,7 @@ public class PermissionService {
 			case SHARED -> repository.findByUserIdAndType(userId, PermissionType.LECTURA);
 			case ALL -> repository.findByUserId(userId);
 		};
+		log.info("snippets accesibles ({}): {}", relation, permissions.size());
 		return permissions.stream().map(SnippetPermission::snippetId).toList();
 	}
 }
