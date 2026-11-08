@@ -17,7 +17,23 @@ repositories {
 	mavenCentral()
 }
 
+// Agente Java de New Relic (#29): Gradle lo baja, pero no entra al classpath;
+// el Dockerfile lo engancha con -javaagent. Igual que el Asset Service de la
+// cátedra. Ver Observabilidad (New Relic) en Decisiones técnicas de SnippetSearcher.
+ext {
+	set('newRelicVersion', '9.5.0')
+}
+
+configurations {
+	newrelic {
+		canBeConsumed = false
+		canBeResolved = true
+		transitive = false
+	}
+}
+
 dependencies {
+	newrelic "com.newrelic.agent.java:newrelic-agent:${newRelicVersion}"
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	implementation 'org.springframework.boot:spring-boot-starter-flyway'
@@ -46,4 +62,16 @@ tasks.named('test') {
 // el Dockerfile copia el único jar que queda en build/libs.
 tasks.named('jar') {
 	enabled = false
+}
+
+// Deja el agente (build/newrelic/newrelic.jar) junto a su configuración
+// (newrelic.yml, que el agente lee de su misma carpeta).
+tasks.register('copyNewRelic', Sync) {
+	from(configurations.newrelic) {
+		rename { 'newrelic.jar' }
+	}
+	from('newrelic') {
+		include 'newrelic.yml'
+	}
+	into layout.buildDirectory.dir('newrelic')
 }
