@@ -14,6 +14,7 @@ Servicio de permisos de [Snippet Searcher](https://github.com/MartinaCousido/Sni
 | Compartir un snippet con otro usuario (solo lectura) | Guardar el contenido ni los metadatos de los snippets (eso es de **Snippet Service**) |
 | Responder si un usuario puede leer o escribir un snippet | Decidir permisos por rol (por ahora no hay roles en el sistema) |
 | Listar los snippets a los que un usuario tiene acceso | |
+| Borrar los permisos de un snippet cuando se borra | |
 
 ## Reglas de permisos
 
@@ -32,6 +33,8 @@ Servicio de permisos de [Snippet Searcher](https://github.com/MartinaCousido/Sni
 
 Este servicio no llama a ningún otro servicio del sistema. Su base de datos es propia y ningún otro servicio accede a ella.
 
+Desde el navegador, acepta solo los origins de la variable `CORS_ALLOWED_ORIGINS` (`security/CorsConfig`). Las reglas están en [CORS](https://github.com/MartinaCousido/SnippetSearcher#cors) de SnippetSearcher.
+
 ## Modelo de datos (lógico)
 
 | Dato | Descripción |
@@ -42,18 +45,30 @@ Este servicio no llama a ningún otro servicio del sistema. Su base de datos es 
 
 ## Operaciones
 
-A nivel lógico. Los endpoints y formatos concretos están pendientes (ver [Decisiones técnicas](https://github.com/MartinaCousido/SnippetSearcher#decisiones-técnicas)).
+Contrato definido en [Decisiones técnicas](https://github.com/MartinaCousido/SnippetSearcher#decisiones-técnicas) de SnippetSearcher.
 
-| Operación | Quién la usa | User story |
-|---|---|---|
-| Registrar owner | Snippet Service | US-1, US-3 |
-| Compartir snippet | UI | US-7 |
-| ¿Puede leer / escribir? | Snippet Service | US-2, US-4, US-6 |
-| Snippets accesibles por un usuario | Snippet Service | US-5 |
+| Operación | Endpoint | Respuesta | Quién la usa | User story |
+|---|---|---|---|---|
+| Registrar owner | `POST /permissions/{snippetId}/owner` | 201. Si ya es el owner, no hace nada y responde 201 igual. **409** si el snippet ya tiene otro owner, o si el usuario ya tiene otro permiso sobre el snippet | Snippet Service | US-1, US-3 |
+| Compartir snippet | `POST /permissions/{snippetId}/share` con `{ "userId": "auth0\|juan" }` | 201. El invitado queda con permiso `LECTURA`; compartir dos veces no lo duplica. **403** si quien comparte no es el owner, **400** si el owner se lo comparte a sí mismo o falta el `userId` | UI | US-7 |
+| ¿Puede leer / escribir? | `GET /permissions/{snippetId}` | `{ "canRead": true, "canWrite": false }`. Owner: los dos en `true`. Compartido: solo `canRead`. Cualquier otro usuario, o un snippet sin permisos: los dos en `false` | Snippet Service | US-2, US-4, US-6 |
+| Snippets accesibles por un usuario | `GET /permissions/snippets?relation=owner\|shared\|all` | Lista de ids (UUID), por ejemplo `["3f2b…", "9c41…"]`. Sin `relation`, usa `all`. **400** si la relación no existe | Snippet Service | US-5 |
+| Borrar los permisos de un snippet | `DELETE /permissions/{snippetId}` | 204. Borra todos los permisos del snippet (owner y compartidos). Si el snippet no tiene permisos, 204 igual (así Snippet Service puede reintentar). **403** si quien pide no es el owner | Snippet Service, al borrar un snippet | — |
+
+En todos, el `userId` de quien pide es el `sub` del token de Auth0 (`security/CurrentUser`). Cuando el pedido viene de Snippet Service, este reenvía el token del usuario: nunca manda el `userId` en el cuerpo ni en un header.
+
+Además, cada operación pide un permiso del token (`security/SecurityConfig`, ver **Roles y permisos** en [Decisiones técnicas](https://github.com/MartinaCousido/SnippetSearcher#decisiones-técnicas)):
+
+| Operación | Permiso |
+|---|---|
+| ¿Puede leer o escribir? y snippets accesibles (`GET`) | `read:snippets` |
+| Registrar owner, compartir y borrar permisos (`POST`, `DELETE`) | `write:snippets` |
+
+Sin token válido responde **401**, y sin el permiso, **403**. El health (`/actuator/health`) no pide token.
 
 ## Stack
 
-**Java 21 + Spring Boot 4.1.1 + Gradle 9.8**, con **PostgreSQL 17** propio. Las decisiones del sistema están en [Decisiones técnicas](https://github.com/MartinaCousido/SnippetSearcher#decisiones-técnicas) de SnippetSearcher.
+**Java 25 + Spring Boot 4.1.1 + Gradle 9.8**, con **PostgreSQL 17** propio. Las decisiones del sistema están en [Decisiones técnicas](https://github.com/MartinaCousido/SnippetSearcher#decisiones-técnicas) de SnippetSearcher.
 
 ## Imagen Docker
 
@@ -81,17 +96,29 @@ Si se quiere cambiar la contraseña de la base, hay que hacerlo en el `.env` **a
 
 Para comprobar que está arriba y conectado a su base: http://localhost:8081/actuator/health tiene que responder `"status":"UP"`, con `db` también en `UP`.
 
+`AUTH0_DOMAIN` y `AUTH0_AUDIENCE` ya están en el `docker-compose.yml`: no son secretos y no van en el `.env`. Sin ellas, el servicio no arranca. Para llamar a los demás endpoints hace falta un token: ver [Cómo levantarlo](https://github.com/MartinaCousido/SnippetSearcher#cómo-levantarlo) en SnippetSearcher.
+
 Para levantar **el sistema completo** (todos los servicios), usar `docker-compose.sistema.yml` desde el repo [SnippetSearcher](https://github.com/MartinaCousido/SnippetSearcher#cómo-levantarlo), con este repo clonado al lado. Ese archivo incluye el `docker-compose.yml` de este repo y usa su `.env`. Todos comparten el proyecto de Docker `snippet-searcher`, así que los contenedores y los datos son los mismos se levante este servicio solo o el sistema completo.
 
 ### Correr los tests
 
-El framework es **JUnit 5**, con los starters de test de Spring Boot (decisión registrada en SnippetSearcher). Los tests levantan el servicio completo, así que necesitan la base arriba y las variables de conexión. Con la base levantada (`docker compose up -d permisos-db`):
+El framework es **JUnit 5**, con los starters de test de Spring Boot (decisión registrada en SnippetSearcher). Los tests levantan el servicio completo, así que necesitan la base arriba y las variables de conexión. Corren contra una **base aparte, `permisos_test`**, en el mismo contenedor: antes de cada test se borran los datos, y así no se pierden los que usa el servicio levantado en `permisos`.
+
+Con la base levantada (`docker compose up -d permisos-db`), crear la base de tests una sola vez:
 
 ```bash
-DB_URL=jdbc:postgresql://localhost:5434/permisos DB_USER=<usuario> DB_PASSWORD=<contraseña> ./gradlew test
+docker compose exec permisos-db createdb -U <usuario> permisos_test
 ```
 
-Usuario y contraseña son los del `.env`. Sin la base, `./gradlew build` y `./gradlew test` fallan; la imagen de Docker se arma igual porque solo ejecuta `bootJar`.
+Y correr los tests contra ella:
+
+```bash
+DB_URL=jdbc:postgresql://localhost:5434/permisos_test DB_USER=<usuario> DB_PASSWORD=<contraseña> ./gradlew test
+```
+
+Los tests no llaman a Auth0: cada pedido arma su usuario con `jwt()` de `spring-security-test` (`security/TestUsers`), y Gradle les pasa valores de prueba para `AUTH0_DOMAIN` y `AUTH0_AUDIENCE` (`build.gradle`).
+
+Usuario y contraseña son los del `.env`. Si se borran los volúmenes (`down -v`), hay que volver a crear la base de tests. Sin la base, `./gradlew build` y `./gradlew test` fallan; la imagen de Docker se arma igual porque solo ejecuta `bootJar`.
 
 En cada PR hacia `dev` o `main`, el CI (`.github/workflows/ci.yml`) corre `./gradlew build` con una base Postgres 17 descartable. Su check se llama `compilar-y-testear` y es obligatorio para mergear.
 
