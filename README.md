@@ -66,6 +66,12 @@ Además, cada operación pide un permiso del token (`security/SecurityConfig`, v
 
 Sin token válido responde **401**, y sin el permiso, **403**. El health (`/actuator/health`) no pide token.
 
+## Observabilidad (New Relic)
+
+El agente Java de New Relic (`9.5.0`) va en la imagen, igual que en Snippet Service: manda métricas, traces y los logs del servicio. Cada pedido lleva en el contexto de los logs (MDC) su `requestId` (el que manda Snippet Service en `X-Request-Id`, para ver juntos los logs de un mismo pedido), el usuario y el servicio. Se loguean registrar owner, compartir y borrar permisos, y los rechazos. Ver **Observabilidad (New Relic)** en [Decisiones técnicas](https://github.com/MartinaCousido/SnippetSearcher#decisiones-técnicas).
+
+En local el agente viene apagado. Para mandar datos, se levanta con `NEW_RELIC_AGENT_ENABLED=true` y `NEW_RELIC_LICENSE_KEY` (la de `SnippetSearcher-infra/newrelic/.env`), y aparece como `permission-service (local)`.
+
 ## Stack
 
 **Java 25 + Spring Boot 4.1.1 + Gradle 9.8**, con **PostgreSQL 17** propio. Las decisiones del sistema están en [Decisiones técnicas](https://github.com/MartinaCousido/SnippetSearcher#decisiones-técnicas) de SnippetSearcher.

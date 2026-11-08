@@ -1,5 +1,7 @@
 package com.snippetsearcher.permissions.security;
 
+import java.util.Optional;
+
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.stereotype.Component;
@@ -18,5 +20,12 @@ public class CurrentUser {
 			return jwt.getName();
 		}
 		throw new IllegalStateException("El pedido no tiene un usuario autenticado");
+	}
+
+	// El usuario, si el pedido tiene uno (el health, por ejemplo, no). Para el
+	// contexto de los logs.
+	public Optional<String> idIfAuthenticated() {
+		var authentication = SecurityContextHolder.getContext().getAuthentication();
+		return authentication instanceof JwtAuthenticationToken jwt ? Optional.of(jwt.getName()) : Optional.empty();
 	}
 }
